@@ -1,0 +1,56 @@
+export type IGenericErrorMessage = {
+  path: string;
+  message: string;
+};
+
+export type IGenericErrorResponse = {
+  statusCode: number;
+  message: string;
+  errorMessages: IGenericErrorMessage[];
+};
+
+export type IGenericResponse<T> = {
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+  data: T;
+};
+
+export type IPaginationOptions = {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: "ASC" | "DESC";
+};
+
+export type ICategoryFilters = {
+  searchTerm?: string;
+  is_active?: boolean;
+  title?: string;
+  description?: string;
+};
+
+export type IPageFilters = {
+  searchTerm?: string;
+  id?: string;
+  is_active?: boolean;
+  slug?: string;
+  page_name?: string;
+  external_link?: string;
+  page_type?: PageType;
+};
+
+export enum PageType {
+  INTERNAL = "internal",
+  EXTERNAL = "external",
+}
+
+export type IAdminFilters = {
+  searchTerm?: string;
+  id?: string;
+  email?: string;
+  is_active?: boolean;
+  full_name?: string;
+};
