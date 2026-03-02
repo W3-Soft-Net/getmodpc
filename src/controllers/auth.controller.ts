@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { AdminAuthService } from "../services/admin-auth.service";
+import { AdminAuthService } from "../services/auth.service";
 import { catchAsync } from "../utils/catchAsync";
 import sendResponse from "../utils/ApiResponse";
 import httpStatusCodes from "http-status-codes";

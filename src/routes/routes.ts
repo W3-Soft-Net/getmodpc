@@ -5,6 +5,8 @@ import commentRoutes from "./comment.route";
 import adminRoutes from "./admin.route";
 import pageRoutes from "./page.route";
 import mediaRoutes from "./media.route";
+import developerRoutes from "./developer.route";
+import tagRoutes from "./tag.route";
 
 const router = Router();
 
@@ -21,7 +23,14 @@ const moduleRoutes = [
     path: "/categories",
     route: categoryRoutes,
   },
-
+  {
+    path: "/developers",
+    route: developerRoutes,
+  },
+  {
+    path: "/tags",
+    route: tagRoutes,
+  },
   {
     path: "/comments",
     route: commentRoutes,

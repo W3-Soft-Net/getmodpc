@@ -55,3 +55,15 @@ export type IAdminFilters = {
   is_active?: boolean;
   full_name?: string;
 };
+
+export type ITagAndDeveloperFilters = {
+  searchTerm?: string;
+  slug?: boolean;
+  name?: string;
+  description?: string;
+};
+
+export interface SlugEntity {
+  id: string | number;
+  slug: string;
+}

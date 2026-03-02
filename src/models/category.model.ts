@@ -12,7 +12,7 @@ import {
 
 @Entity("categories")
 export class Category {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ type: "text" })

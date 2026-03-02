@@ -8,10 +8,9 @@ import {
 } from "typeorm";
 import * as bcrypt from "bcrypt";
 
-
 @Entity("admins")
 export class Admin {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column({ unique: true })
@@ -39,17 +38,17 @@ export class Admin {
   password_reset_otp_expires: Date | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 
   @BeforeInsert()
   async hashPassword() {
     if (this.password) {
       this.password = await bcrypt.hash(
         this.password,
-        parseInt(process.env.SALT_ROUNDS || "10")
+        parseInt(process.env.SALT_ROUNDS || "10"),
       );
     }
   }
@@ -61,7 +60,7 @@ export class Admin {
   async setPassword(newPassword: string) {
     this.password = await bcrypt.hash(
       newPassword,
-      parseInt(process.env.SALT_ROUNDS || "10")
+      parseInt(process.env.SALT_ROUNDS || "10"),
     );
   }
 }

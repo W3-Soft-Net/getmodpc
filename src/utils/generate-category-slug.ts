@@ -1,11 +1,11 @@
 import slugify from "slugify";
 import { Repository } from "typeorm";
-import { Category } from "../models/category.model";
+import { SlugEntity } from "../types";
 
-export const generateUniqueSlug = async (
+export const generateUniqueSlug = async <T extends SlugEntity>(
   name: string,
-  repo: Repository<Category>,
-  excludeId?: string,
+  repo: Repository<T>,
+  excludeId?: string | number,
 ): Promise<string> => {
   const baseSlug = slugify(name, {
     lower: true,
@@ -17,7 +17,9 @@ export const generateUniqueSlug = async (
   let counter = 1;
 
   while (true) {
-    const existing = await repo.findOne({ where: { slug } });
+    const existing = await repo.findOne({
+      where: { slug } as any,
+    });
 
     if (!existing || existing.id === excludeId) break;
 
