@@ -21,15 +21,16 @@ export type IGenericResponse<T> = {
 export type IPaginationOptions = {
   page?: number;
   limit?: number;
-  sortBy?: string;
-  sortOrder?: "ASC" | "DESC";
+  sort_by?: string;
+  sort_order?: "ASC" | "DESC";
 };
 
 export type ICategoryFilters = {
   searchTerm?: string;
-  is_active?: boolean;
-  title?: string;
+  slug?: boolean;
+  name?: string;
   description?: string;
+  parent_id?: string | null;
 };
 
 export type IPageFilters = {

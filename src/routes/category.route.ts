@@ -9,12 +9,6 @@ const categoryController = new CategoryController();
 
 router.get("/", authMiddleware(), categoryController.getAllCategories);
 
-router.get(
-  "/active",
-  authMiddleware(),
-  categoryController.getAllActiveCategories,
-);
-
 router.get("/:id", authMiddleware(), categoryController.getCategoryById);
 router.post(
   "/",

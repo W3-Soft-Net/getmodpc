@@ -14,11 +14,11 @@ export class CategoryController {
     const filters = pick(req.query, CategoryConstant.categoryFiltersFields);
     const paginationOptions: IPaginationOptions = pick(
       req.query,
-      paginationFields
+      paginationFields,
     );
     const categories = await this.categoryService.getAllCategories(
       filters,
-      paginationOptions
+      paginationOptions,
     );
     sendResponse<Category[]>(res, {
       message: "Categories fetched successfully",
@@ -28,27 +28,6 @@ export class CategoryController {
       success: true,
     });
   });
-
-  public getAllActiveCategories = catchAsync(
-    async (req: Request, res: Response) => {
-      const filters = pick(req.query, CategoryConstant.categoryFiltersFields);
-      const paginationOptions: IPaginationOptions = pick(
-        req.query,
-        paginationFields
-      );
-      const categories = await this.categoryService.getAllCategories(
-        { ...filters, is_active: true },
-        paginationOptions
-      );
-      sendResponse<Category[]>(res, {
-        message: "Categories fetched successfully",
-        statusCode: 200,
-        data: categories.data,
-        meta: categories.meta,
-        success: true,
-      });
-    }
-  );
 
   public getCategoryById = catchAsync(async (req: Request, res: Response) => {
     const category = await this.categoryService.getCategoryById(req.params.id);
@@ -61,11 +40,7 @@ export class CategoryController {
   });
 
   public createCategory = catchAsync(async (req: Request, res: Response) => {
-    const author = req?.admin?.id;
-    const category = await this.categoryService.createCategory({
-      ...req.body,
-      author,
-    });
+    const category = await this.categoryService.createCategory(req.body);
     sendResponse<Category>(res, {
       message: "Category created successfully",
       statusCode: 201,
@@ -77,7 +52,7 @@ export class CategoryController {
   public updateCategory = catchAsync(async (req: Request, res: Response) => {
     const category = await this.categoryService.updateCategory(
       req.params.id,
-      req.body
+      req.body,
     );
     sendResponse<Category>(res, {
       message: "Category updated successfully",

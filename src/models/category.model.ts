@@ -5,6 +5,9 @@ import {
   Index,
   UpdateDateColumn,
   PrimaryGeneratedColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
 } from "typeorm";
 
 @Entity("categories")
@@ -12,19 +15,38 @@ export class Category {
   @PrimaryGeneratedColumn()
   id: string;
 
+  @Column({ type: "text" })
+  name: string;
+
   @Column({ type: "varchar", length: 100, unique: true })
   @Index({ unique: true })
-  title: string;
+  slug: string;
 
   @Column({ nullable: true, type: "text" })
   description: string | null;
 
-  @Column({ default: true })
-  is_active: boolean;
+  @Column({ nullable: true, type: "text" })
+  category_icon: string | null;
+
+  @Column({ nullable: true, type: "text" })
+  category_bg_color: string | null;
+
+  @Column({ nullable: true, type: "text" })
+  category_icon_bg_color: string | null;
+
+  @ManyToOne(() => Category, (category) => category.children, {
+    nullable: true,
+    onDelete: "SET NULL",
+  })
+  @JoinColumn({ name: "parent_cat_id" })
+  parent: Category | null;
+
+  @OneToMany(() => Category, (category) => category.parent)
+  children: Category[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 }
