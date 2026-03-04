@@ -1,7 +1,12 @@
 import { AppDataSource } from "../config/db";
 import { FAQsConstant } from "../const/faq.const";
 import { FAQs } from "../models/faq.model";
-import { IFAQsFilters, IGenericResponse, IPaginationOptions } from "../types";
+import {
+  EnumType,
+  IFAQsFilters,
+  IGenericResponse,
+  IPaginationOptions,
+} from "../types";
 import ApiError from "../utils/ApiError";
 import { calculatePagination } from "../utils/pagination";
 import httpStatusCodes from "http-status-codes";
@@ -48,6 +53,11 @@ export class FaqService {
         total,
       },
     };
+  }
+
+  async getFaqByType(type: EnumType): Promise<FAQs[]> {
+    const faqs = await this.faqRepository.findBy({ type });
+    return faqs;
   }
 
   async getFaqById(id: string): Promise<FAQs> {

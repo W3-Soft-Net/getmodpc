@@ -6,6 +6,7 @@ const router = Router();
 const faqController = new FaqController();
 
 router.get("/", authMiddleware(), faqController.getAllFAQs);
+router.get("/type/:type", faqController.getFaqByType);
 router.get("/:id", authMiddleware(), faqController.getFaqById);
 router.post("/", authMiddleware(), faqController.createFaq);
 router.patch("/:id", authMiddleware(), faqController.updateFaq);

@@ -3,7 +3,7 @@ import { FaqService } from "../services/faq.service";
 import { catchAsync } from "../utils/catchAsync";
 import pick from "../utils/pick";
 import { FAQsConstant } from "../const/faq.const";
-import { IPaginationOptions } from "../types";
+import { EnumType, IPaginationOptions } from "../types";
 import { paginationFields } from "../const/pagination.const";
 import sendResponse from "../utils/ApiResponse";
 import { FAQs } from "../models/faq.model";
@@ -24,6 +24,18 @@ export class FaqController {
       statusCode: httpStatusCodes.OK,
       data: faqs.data,
       meta: faqs.meta,
+      success: true,
+    });
+  });
+
+  public getFaqByType = catchAsync(async (req: Request, res: Response) => {
+    const faqs = await this.faqService.getFaqByType(
+      req.params.type as EnumType,
+    );
+    sendResponse<FAQs[]>(res, {
+      message: "FAQs fetched successfully",
+      statusCode: httpStatusCodes.OK,
+      data: faqs,
       success: true,
     });
   });

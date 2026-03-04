@@ -15,6 +15,22 @@ export class TestimonialService {
   private readonly testimonialRepository =
     AppDataSource.getRepository(Testimonial);
   async createTestimonial(data: Partial<Testimonial>): Promise<Testimonial> {
+    if (data.sort_order === undefined || data.sort_order === null) {
+      const maxSortOrder = await this.testimonialRepository.find({
+        order: { sort_order: "DESC" },
+        take: 1,
+      });
+      const maxSortOrderEntity = maxSortOrder[0];
+
+      if (
+        maxSortOrderEntity &&
+        typeof maxSortOrderEntity.sort_order === "number"
+      ) {
+        data.sort_order = maxSortOrderEntity.sort_order + 1;
+      } else {
+        data.sort_order = 1;
+      }
+    }
     const testimonial = this.testimonialRepository.create(data);
     return await this.testimonialRepository.save(testimonial);
   }

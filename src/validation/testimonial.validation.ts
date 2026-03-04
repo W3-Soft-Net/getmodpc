@@ -24,7 +24,7 @@ const createTestimonialSchema = z.object({
 
 const updateTestimonialSchema = z
   .object({
-    body: createTestimonialSchema.shape.body,
+    body: createTestimonialSchema.shape.body.partial(),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {
