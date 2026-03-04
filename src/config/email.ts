@@ -34,14 +34,14 @@ export const sendEmailForOtp = async (
   const subject = "OTP for password reset";
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin:auto; padding: 20px; border:1px solid #ddd; border-radius:10px; background:#f9f9f9;">
-        <h2 style="color:#2BB673;">Soul-Space</h2>
+        <h2 style="color:#2BB673;">GETMODPC</h2>
         <p>Hello,${options.name},</p>
         <p>We received a request to reset your password. Use the OTP below to reset it:</p>
         <h1 style="text-align:center; color:#2BB673; letter-spacing: 4px;">${otp}</h1>
         <p style="font-size: 0.9em; color: #555;">This OTP is valid for 10 minutes.</p>
         <p>If you did not request a password reset, please ignore this email.</p>
         <hr />
-        <p style="font-size: 0.8em; color:#888;">&copy; ${new Date().getFullYear()} Soul-Space. All rights reserved.</p>
+        <p style="font-size: 0.8em; color:#888;">&copy; ${new Date().getFullYear()} GETMODPC. All rights reserved.</p>
       </div>
     `;
   return transporter.sendMail({
@@ -59,16 +59,16 @@ export const sendContactUsEmail = async (options: {
   employeeNumber?: string;
   message: string;
 }) => {
-  const subject = "New Contact Us Message – Soul-Space";
+  const subject = "New Contact Us Message – GETMODPC";
 
   const html = `
   <div style="font-family: Arial, sans-serif; max-width: 640px; margin:auto; padding: 24px; background:#ffffff; border:1px solid #e5e7eb; border-radius:12px;">
     
     <!-- Header -->
     <div style="text-align:center; padding-bottom: 16px; border-bottom:1px solid #e5e7eb;">
-      <h2 style="margin:0; color:#2BB673;">Soul-Space</h2>
+      <h2 style="margin:0; color:#2BB673;">GETMODPC</h2>
       <p style="margin:4px 0 0; color:#1F2937; font-size:14px;">
-       Empowering Mental Health Support through Technology
+       GETMODPC is a software development company that specializes in building custom software solutions for businesses and individuals.
       </p>
     </div>
 
@@ -119,7 +119,7 @@ export const sendContactUsEmail = async (options: {
     <!-- Footer -->
     <div style="border-top:1px solid #e5e7eb; padding-top:16px; text-align:center; font-size:12px; color:#6b7280;">
       <p style="margin:0;">
-        &copy; ${new Date().getFullYear()} Soul-Space. All rights reserved.
+        &copy; ${new Date().getFullYear()} GETMODPC. All rights reserved.
       </p>
       <p style="margin:4px 0 0;">
         This email was generated from the Contact Us form.
