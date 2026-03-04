@@ -30,7 +30,7 @@ export type ICategoryFilters = {
   slug?: boolean;
   name?: string;
   description?: string;
-  parent_id?: string | null;
+  parent_cat_id?: string | null;
 };
 
 export type IPageFilters = {

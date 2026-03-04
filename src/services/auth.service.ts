@@ -121,7 +121,10 @@ export class AdminAuthService {
     oldPassword: string,
     newPassword: string,
   ): Promise<void> {
-    const admin = await this.adminRepository.findOne({ where: { id: userId } });
+    const admin = await this.adminRepository.findOne({
+      where: { id: userId },
+      select: ["id", "email", "password", "is_active", "avatar", "full_name"],
+    });
     if (!admin) {
       throw new ApiError(httpStatusCodes.NOT_FOUND, "User not found");
     }

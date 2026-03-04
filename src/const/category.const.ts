@@ -1,5 +1,5 @@
-const categorySearchFields = ["id", "name", "description", "slug"];
-const categoryFiltersFields = ["searchTerm", "id", "name", "slug", "parent_id"];
+const categorySearchFields = ["name", "description", "slug"];
+const categoryFiltersFields = ["searchTerm", "name", "slug", "parent_cat_id"];
 
 export const CategoryConstant = {
   categorySearchFields,
