@@ -89,6 +89,11 @@ export type IUserAppRequestFilters = {
   status?: EnumUserAppRequestStatus;
 };
 
+export type IReportReasonFilters = {
+  searchTerm?: string;
+  is_active?: boolean;
+};
+
 // ====================== ENUM =============== //
 export enum EnumType {
   ANDROID = "android",

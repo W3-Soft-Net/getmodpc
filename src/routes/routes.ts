@@ -10,6 +10,7 @@ import tagRoutes from "./tag.route";
 import testimonialRoutes from "./testimonial.route";
 import faqRoutes from "./faq.route";
 import userRequestRoutes from "./user_request.route";
+import reportReasonRoutes from "./report_reason.route";
 
 const router = Router();
 
@@ -57,6 +58,10 @@ const moduleRoutes = [
   {
     path: "/user-app-requests",
     route: userRequestRoutes,
+  },
+  {
+    path: "/report-reasons",
+    route: reportReasonRoutes,
   },
 ];
 

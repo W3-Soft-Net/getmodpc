@@ -1,9 +1,7 @@
-const reportFiltersFields = [
-  "searchTerm",
-  "reporter",
-  "startDate",
-  "endDate",
-  "status",
-];
+const reportReasonFiltersFields = ["searchTerm", "is_active"];
+const reportReasonSearchFields = ["title"];
 
-export const ReportConstant = { reportFiltersFields };
+export const ReportConstant = {
+  reportReasonFiltersFields,
+  reportReasonSearchFields,
+};
