@@ -101,6 +101,14 @@ export type IReportFilters = {
   reason?: string;
 };
 
+export type IAdFilters = {
+  searchTerm?: string;
+  media_type?: EnumMediaType;
+  is_active?: boolean;
+  start_date?: string;
+  end_date?: string;
+};
+
 // ====================== ENUM =============== //
 export enum EnumType {
   ANDROID = "android",
@@ -118,4 +126,9 @@ export enum EnumReportStatus {
   DECLINED = "declined",
   CLOSED = "closed",
   OPEN = "open",
+}
+
+export enum EnumMediaType {
+  IMAGE = "image",
+  VIDEO = "video",
 }

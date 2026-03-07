@@ -12,6 +12,7 @@ import faqRoutes from "./faq.route";
 import userRequestRoutes from "./user_request.route";
 import reportReasonRoutes from "./report_reason.route";
 import reportRoutes from "./report.route";
+import adRoutes from "./ad.route";
 
 const router = Router();
 
@@ -67,6 +68,10 @@ const moduleRoutes = [
   {
     path: "/reports",
     route: reportRoutes,
+  },
+  {
+    path: "/ads",
+    route: adRoutes,
   },
 ];
 

@@ -10,11 +10,17 @@ import {
 
 @Entity("comments")
 export class Comment {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("uuid")
   id: string;
 
   @Column("text")
   content: string;
+
+  @Column()
+  email: string;
+
+  @Column()
+  name: string;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
   parent: Comment | null;
@@ -29,8 +35,8 @@ export class Comment {
   last_edited_at: Date | null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  created_at: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updated_at: Date;
 }
