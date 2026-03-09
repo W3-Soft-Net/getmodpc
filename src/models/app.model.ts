@@ -58,6 +58,12 @@ export class App {
   @Column({ type: "text", nullable: true })
   icon: string | null;
 
+  @Column({ type: "text", nullable: true })
+  genre: string | null;
+
+  @Column({ type: "text", nullable: true })
+  youtube_id: string | null;
+
   @Column()
   os_version: string;
 
@@ -73,14 +79,14 @@ export class App {
   @Column({ type: "text", nullable: true })
   version: string | null;
 
+  @Column({ type: "text", nullable: true })
+  update_available: string | null;
+
   @Column({ type: "boolean", default: false })
   show_in_slider: boolean;
 
-  @Column({ type: "boolean", default: true })
-  is_active: boolean;
-
-  @Column({ type: "bigint", default: 0 })
-  updated: number;
+  @Column({ type: "text", nullable: true })
+  updated: string | null;
 
   @Column({ type: "enum", enum: EnumAppStatus, default: EnumAppStatus.DRAFT })
   status: EnumAppStatus;
@@ -137,6 +143,9 @@ export class App {
     title: string | null;
     descriptions: string | null;
   }[];
+
+  @Column({ type: "timestamp", nullable: true })
+  last_version_checked_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

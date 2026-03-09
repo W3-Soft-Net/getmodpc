@@ -109,6 +109,13 @@ export type IAdFilters = {
   end_date?: string;
 };
 
+export type ICheckAppVersionResponse = {
+  update_available: boolean;
+  current_version: string;
+  new_version: string;
+  last_checked: Date;
+};
+
 // ====================== ENUM =============== //
 export enum EnumPlatformType {
   ANDROID = "android",
@@ -146,4 +153,9 @@ export enum EnumAppStatus {
 export enum EnumAppCommentStatus {
   OPEN = "open",
   CLOSED = "closed",
+}
+
+export enum EnumAppScrappingType {
+  PLAYSTORE = "playstore",
+  LITEAPKS = "liteapks",
 }
