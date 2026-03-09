@@ -1,26 +1,36 @@
 import { Router } from "express";
 import validateRequest from "../middlewares/validateRequest";
 import { AppValidation } from "../validation/app.validation";
-import axios from "axios";
 import { ScrappingController } from "../controllers/scrapping.controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 const scrappingController = new ScrappingController();
 
 router.get(
   "/get-search-playstore-apps",
-  scrappingController.getPlayStoreByAppName,
+  authMiddleware(),
+  scrappingController.getPlayStoreAppsByAppName,
 );
 router.post(
   "/playstore-app-by-url",
   validateRequest(AppValidation.getAppScrapingSchema),
+  authMiddleware(),
   scrappingController.getPlayStoreAppByUrl,
 );
 
 router.post(
   "/check-app-version",
   validateRequest(AppValidation.checkAppVersionSchema),
+  authMiddleware(),
   scrappingController.checkUpdate,
+);
+
+//============================= Liteapks App=====================//
+router.get(
+  "/liteapks-app-by-type",
+  authMiddleware(),
+  scrappingController.getAllLiteApkLatestAppsAndGames,
 );
 
 export default router;

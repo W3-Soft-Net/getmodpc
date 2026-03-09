@@ -1,4 +1,10 @@
 import z from "zod";
+import {
+  EnumAppCommentStatus,
+  EnumAppStatus,
+  EnumAppType,
+  EnumPlatformType,
+} from "../types";
 
 const getAppScrapingSchema = z.object({
   body: z.object({
@@ -13,7 +19,103 @@ const checkAppVersionSchema = z.object({
   }),
 });
 
+const createAppSchema = z.object({
+  body: z.object({
+    name: z.string().min(2, "Name must be at least 2 characters").max(255),
+    platform: z.nativeEnum(EnumPlatformType).optional().nullable(),
+    type: z.nativeEnum(EnumAppType).optional().nullable(),
+    description: z.string().min(2, "Description must be at least 2 characters"),
+    summary: z.string().optional().nullable(),
+    latest_news: z.string().optional().nullable(),
+    header_image: z.string().optional().nullable(),
+    icon: z.string().optional().nullable(),
+    genre: z.string().optional().nullable(),
+    youtube_id: z.string().optional().nullable(),
+    os_version: z.string().min(2, "OS version must be at least 2 characters"),
+    screenshots: z.array(z.string()).optional(),
+    app_developers: z.array(z.string()).optional(),
+    app_tags: z.array(z.string()).optional(),
+    version: z.string().optional().nullable(),
+    latest_version: z.string().optional().nullable(),
+    show_in_slider: z.boolean().optional(),
+    updated: z.string().optional().nullable(),
+    status: z.nativeEnum(EnumAppStatus).optional(),
+    comment_status: z.nativeEnum(EnumAppCommentStatus).optional(),
+    categories: z.array(z.string().uuid("Invalid category ID")).optional(), // array of category IDs
+    tags: z.array(z.string().uuid("Invalid tag ID")).optional(), // array of tag IDs
+    url: z.string(),
+    package_name: z.string(),
+    installs: z.string(),
+    score_text: z.string(),
+    ratings: z.number().int().optional(),
+    reviews: z.number().int().optional(),
+    published_date: z.string().optional().nullable(),
+    links: z.array(z.string().uuid("Invalid app link ID")).optional(), // array of app link IDs
+    modders: z
+      .array(
+        z.object({
+          title: z.string().optional().nullable(),
+          descriptions: z.string().optional().nullable(),
+        }),
+      )
+      .optional(),
+    last_version_checked_at: z.string().optional().nullable(),
+  }),
+});
+
+const updateAppSchema = z.object({
+  body: z
+    .object({
+      name: z.string().optional(),
+      slug: z.string().optional(),
+      platform: z.nativeEnum(EnumPlatformType).optional().nullable(),
+      type: z.nativeEnum(EnumAppType).optional().nullable(),
+      description: z.string().optional(),
+      summary: z.string().optional().nullable(),
+      latest_news: z.string().optional().nullable(),
+      header_image: z.string().optional().nullable(),
+      icon: z.string().optional().nullable(),
+      genre: z.string().optional().nullable(),
+      youtube_id: z.string().optional().nullable(),
+      os_version: z.string().optional(),
+      screenshots: z.array(z.string()).optional(),
+      app_developers: z.array(z.string()).optional(),
+      app_tags: z.array(z.string()).optional(),
+      version: z.string().optional().nullable(),
+      latest_version: z.string().optional().nullable(),
+      show_in_slider: z.boolean().optional(),
+      updated: z.string().optional().nullable(),
+      status: z.nativeEnum(EnumAppStatus).optional(),
+      comment_status: z.nativeEnum(EnumAppCommentStatus).optional(),
+      categories: z.array(z.string()).optional(),
+      tags: z.array(z.string()).optional(),
+      url: z.string().optional(),
+      package_name: z.string().optional(),
+      installs: z.string().optional(),
+      score_text: z.string().optional(),
+      ratings: z.number().int().optional(),
+      reviews: z.number().int().optional(),
+      published_date: z.string().optional().nullable(),
+      links: z.array(z.string()).optional(),
+      modders: z
+        .array(
+          z.object({
+            title: z.string().optional().nullable(),
+            descriptions: z.string().optional().nullable(),
+          }),
+        )
+        .optional(),
+      last_version_checked_at: z.string().optional().nullable(),
+    })
+    .refine((data) => Object.keys(data).length > 0, {
+      message: "At least one field must be updated",
+      path: ["body"],
+    }),
+});
+
 export const AppValidation = {
   checkAppVersionSchema,
   getAppScrapingSchema,
+  createAppSchema,
+  updateAppSchema,
 };

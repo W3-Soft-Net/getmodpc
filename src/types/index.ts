@@ -116,6 +116,16 @@ export type ICheckAppVersionResponse = {
   last_checked: Date;
 };
 
+export type IAppFilters = {
+  searchTerm?: string;
+  platform?: EnumPlatformType;
+  type?: EnumAppType;
+  status?: EnumAppStatus;
+  category?: string;
+  date?: string;
+  only_deleted?: boolean;
+};
+
 // ====================== ENUM =============== //
 export enum EnumPlatformType {
   ANDROID = "android",
@@ -155,7 +165,7 @@ export enum EnumAppCommentStatus {
   CLOSED = "closed",
 }
 
-export enum EnumAppScrappingType {
-  PLAYSTORE = "playstore",
-  LITEAPKS = "liteapks",
+export enum EnumLiteApkType {
+  APPS = "apps",
+  GAMES = "games",
 }

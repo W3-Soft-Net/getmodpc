@@ -80,7 +80,7 @@ export class App {
   version: string | null;
 
   @Column({ type: "text", nullable: true })
-  update_available: string | null;
+  latest_version: string | null;
 
   @Column({ type: "boolean", default: false })
   show_in_slider: boolean;
@@ -146,6 +146,12 @@ export class App {
 
   @Column({ type: "timestamp", nullable: true })
   last_version_checked_at: Date | null;
+
+  @Column({ type: "boolean", default: false })
+  is_deleted: boolean;
+
+  @Column({ type: "timestamp", nullable: true })
+  deleted_at: Date | null;
 
   @CreateDateColumn()
   created_at: Date;

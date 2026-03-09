@@ -1,6 +1,7 @@
 import axios from "axios";
 import gPlay from "google-play-scraper";
 import {
+  EnumLiteApkType,
   ICheckAppVersionResponse,
   IGenericResponse,
   IPaginationOptions,
@@ -9,6 +10,8 @@ import ApiError from "../utils/ApiError";
 import httpStatusCodes from "http-status-codes";
 import * as cheerio from "cheerio";
 import { calculatePagination } from "../utils/pagination";
+import { format } from "date-fns";
+
 export class ScrappingService {
   async getPlayStoreAppByUrl(playStoreUrl: string): Promise<any> {
     try {
@@ -44,7 +47,9 @@ export class ScrappingService {
       return {
         ...app,
         size,
-        updated_text: updated,
+        updated_text:
+          updated ??
+          (app.updated ? format(new Date(app.updated), "MMM d, yyyy") : null),
         source: "google-play-store",
       };
     } catch (error) {
@@ -52,7 +57,7 @@ export class ScrappingService {
     }
   }
 
-  async getPlayStoreByAppName(
+  async getPlayStoreAppsByAppName(
     searchText: string,
     paginationOptions: IPaginationOptions,
   ): Promise<IGenericResponse<any[]>> {
@@ -88,5 +93,40 @@ export class ScrappingService {
       new_version: app.version,
       last_checked: new Date(),
     };
+  }
+
+  //=========================== LiteApks APPS =========================//
+  async getLiteApkAppByUrl(url: string): Promise<any> {}
+
+  async getAllLiteApkLatestAppsAndGames(type: EnumLiteApkType): Promise<any[]> {
+    const baseUrl = "https://liteapks.com/";
+
+    const { data } = await axios.get(`${baseUrl}${type}`, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36",
+      },
+    });
+
+    const $ = cheerio.load(data);
+    const apps: any[] = [];
+    $(".post").each((_, el) => {
+      const title = $(el).find("h3, h2, h4").first().text().trim();
+
+      const link = $(el).find("a").first().attr("href");
+
+      const image =
+        $(el).find("img").attr("data-src") || $(el).find("img").attr("src");
+
+      if (title && link) {
+        apps.push({
+          title,
+          link,
+          image,
+        });
+      }
+    });
+
+    return apps;
   }
 }

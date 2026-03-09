@@ -3,7 +3,11 @@ import { ScrappingService } from "../services/scrapping.service";
 import { catchAsync } from "../utils/catchAsync";
 import sendResponse from "../utils/ApiResponse";
 import httpStatusCodes from "http-status-codes";
-import { ICheckAppVersionResponse, IPaginationOptions } from "../types";
+import {
+  EnumLiteApkType,
+  ICheckAppVersionResponse,
+  IPaginationOptions,
+} from "../types";
 import pick from "../utils/pick";
 import { paginationFields } from "../const/pagination.const";
 
@@ -23,14 +27,14 @@ export class ScrappingController {
     },
   );
 
-  public getPlayStoreByAppName = catchAsync(
+  public getPlayStoreAppsByAppName = catchAsync(
     async (req: Request, res: Response) => {
       const { appName } = req.query;
       const paginationOptions: IPaginationOptions = pick(
         req.query,
         paginationFields,
       );
-      const appData = await this.scrappingService.getPlayStoreByAppName(
+      const appData = await this.scrappingService.getPlayStoreAppsByAppName(
         appName as string,
         paginationOptions,
       );
@@ -56,4 +60,19 @@ export class ScrappingController {
       success: true,
     });
   });
+
+  //================================== Liteapks APP =================== //
+  public getAllLiteApkLatestAppsAndGames = catchAsync(
+    async (req: Request, res: Response) => {
+      const apps = await this.scrappingService.getAllLiteApkLatestAppsAndGames(
+        req.query.type as EnumLiteApkType,
+      );
+      sendResponse(res, {
+        message: "Liteapks Apps fetched successfully",
+        statusCode: httpStatusCodes.OK,
+        data: apps,
+        success: true,
+      });
+    },
+  );
 }
