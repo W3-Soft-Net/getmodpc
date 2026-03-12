@@ -15,6 +15,7 @@ import reportRoutes from "./report.route";
 import adRoutes from "./ad.route";
 import settingRoutes from "./setting.route";
 import scrappingRoutes from "./scrapping.route";
+import appRoutes from "./app.route";
 
 const router = Router();
 
@@ -82,6 +83,10 @@ const moduleRoutes = [
   {
     path: "/scrapings",
     route: scrappingRoutes,
+  },
+  {
+    path: "/apps",
+    route: appRoutes,
   },
 ];
 
