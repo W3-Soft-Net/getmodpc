@@ -2,6 +2,7 @@ import {
   CopyObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
+  DeleteObjectsCommandInput,
   GetObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
@@ -41,10 +42,28 @@ export class MediaService {
 
     const response = await s3.send(command);
 
-    // folders
-    const folders: string[] = (response.CommonPrefixes || []).map((p) =>
-      p.Prefix!.replace(folderPrefix, ""),
-    );
+    const folders: string[] = [];
+    for (const p of response.CommonPrefixes || []) {
+      const childPrefix = p.Prefix!;
+
+      const listObjects = await s3.send(
+        new ListObjectsV2Command({
+          Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+          Prefix: childPrefix,
+          MaxKeys: 2,
+        }),
+      );
+
+      const hasObjects = (listObjects.Contents || []).some(
+        (obj) => obj.Key !== childPrefix,
+      );
+      if (
+        hasObjects ||
+        listObjects.Contents?.some((obj) => obj.Key === childPrefix)
+      ) {
+        folders.push(childPrefix.replace(folderPrefix, ""));
+      }
+    }
 
     // files
     const files = await Promise.all(
@@ -86,7 +105,7 @@ export class MediaService {
 
   async createFolder(folderName: string): Promise<string> {
     const command = new PutObjectCommand({
-      Bucket: process.env.IDRIVE_E2_BUCKET!,
+      Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
       Key: `${folderName}/`,
       Body: "",
     });
@@ -119,7 +138,6 @@ export class MediaService {
       });
 
       const listResponse = await s3.send(listCommand);
-
       const objects = listResponse.Contents || [];
 
       for (const obj of objects) {
@@ -138,18 +156,31 @@ export class MediaService {
       }
 
       if (objects.length > 0) {
-        await s3.send(
-          new DeleteObjectsCommand({
+        const batchSize = 1000;
+        for (let i = 0; i < objects.length; i += batchSize) {
+          const batch = objects.slice(i, i + batchSize);
+          const deleteParams: DeleteObjectsCommandInput = {
             Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
             Delete: {
-              Objects: objects.map((o) => ({ Key: o.Key! })),
+              Objects: batch.map((o) => ({ Key: o.Key! })),
+              Quiet: false,
             },
-          }),
-        );
+          };
+          await s3.send(new DeleteObjectsCommand(deleteParams));
+        }
       }
 
       continuationToken = listResponse.NextContinuationToken;
     } while (continuationToken);
+
+    try {
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+          Delete: { Objects: [{ Key: oldPrefix }] },
+        }),
+      );
+    } catch (err) {}
 
     return { moved: movedCount };
   }
@@ -173,7 +204,7 @@ export class MediaService {
             Key: fileName,
             Body: fs.createReadStream(file.path),
             ContentType: file.mimetype,
-            ACL: "private" as any,
+            // ACL: "private" as any,
           };
 
           await s3.send(new PutObjectCommand(params));
@@ -230,38 +261,54 @@ export class MediaService {
 
   async deleteFolder(folderPrefix: string): Promise<IMediaAction> {
     if (!folderPrefix.endsWith("/")) folderPrefix += "/";
-    try {
+
+    let continuationToken: string | undefined;
+    const success: string[] = [];
+    const failed: string[] = [];
+
+    do {
       const listCommand = new ListObjectsV2Command({
         Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
         Prefix: folderPrefix,
+        ContinuationToken: continuationToken,
       });
 
       const listResponse = await s3.send(listCommand);
       const objects = listResponse.Contents || [];
 
-      if (objects.length === 0) return { success: [], failed: [] };
+      if (objects.length > 0) {
+        const batchSize = 1000;
+        for (let i = 0; i < objects.length; i += batchSize) {
+          const batch = objects.slice(i, i + batchSize);
 
-      const deleteParams = {
-        Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
-        Delete: {
-          Objects: objects.map((obj) => ({ Key: obj.Key! })),
-          Quiet: false,
-        },
-      };
+          const deleteParams: DeleteObjectsCommandInput = {
+            Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+            Delete: {
+              Objects: batch.map((o) => ({ Key: o.Key! })),
+              Quiet: false,
+            },
+          };
 
-      const deleteCommand = new DeleteObjectsCommand(deleteParams);
-      const deleteResponse = await s3.send(deleteCommand);
+          const deleteResponse = await s3.send(
+            new DeleteObjectsCommand(deleteParams),
+          );
+          (deleteResponse.Deleted || []).forEach((d) => success.push(d.Key!));
+          (deleteResponse.Errors || []).forEach((e) => failed.push(e.Key!));
+        }
+      }
 
-      const deletedKeys = (deleteResponse.Deleted || []).map((d) => d.Key!);
-      const failedKeys = (deleteResponse.Errors || []).map((e) => e.Key!);
+      continuationToken = listResponse.NextContinuationToken;
+    } while (continuationToken);
 
-      return { success: deletedKeys, failed: failedKeys };
-    } catch (err) {
-      logger.error("Failed to delete folder:", folderPrefix, err);
-      throw new ApiError(
-        httpStatusCodes.INTERNAL_SERVER_ERROR,
-        `Failed to delete folder: ${folderPrefix}`,
+    try {
+      await s3.send(
+        new DeleteObjectsCommand({
+          Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+          Delete: { Objects: [{ Key: folderPrefix }] },
+        }),
       );
-    }
+    } catch (err) {}
+
+    return { success, failed };
   }
 }

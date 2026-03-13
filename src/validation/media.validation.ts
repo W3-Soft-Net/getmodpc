@@ -7,10 +7,15 @@ const createFolderSchema = z.object({
 });
 
 const renameFolderSchema = z.object({
-  body: z.object({
-    oldFolder: z.string().min(1, "Old Folder name is required"),
-    newFolder: z.string().min(1, "New Folder name is required"),
-  }),
+  body: z
+    .object({
+      oldFolder: z.string().min(1, "Old Folder name is required"),
+      newFolder: z.string().min(1, "New Folder name is required"),
+    })
+    .refine((data) => data.oldFolder !== data.newFolder, {
+      message: "New folder name must be different from old folder name",
+      path: ["newFolder"],
+    }),
 });
 
 const deleteMediasSchema = z.object({

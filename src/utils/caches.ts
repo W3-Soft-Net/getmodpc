@@ -11,7 +11,6 @@ const settingCache = new Map<string, CacheItem>();
 setInterval(
   () => {
     const now = Date.now();
-    console.log("called");
     for (const [key, item] of settingCache) {
       if (item.expire <= now) {
         settingCache.delete(key);
