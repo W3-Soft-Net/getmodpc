@@ -1,5 +1,6 @@
 import { App } from "../models/app.model";
 import { AppLink } from "../models/app_link.model";
+import { Category } from "../models/category.model";
 
 export type IGenericErrorMessage = {
   path: string;
@@ -132,6 +133,37 @@ export type IAppFilters = {
 
 export type IAppResponseDTO = Omit<App, "links"> & {
   links: Array<Omit<AppLink, "app">>;
+};
+
+export type IHomePageApp = {
+  icon: string | null;
+  header_image: string | null;
+  id: string;
+  name: string;
+  slug: string;
+  is_verified: boolean;
+  type: EnumAppType | null;
+  platform: EnumPlatformType | null;
+  size: string | null;
+  os_version: string | null;
+  short_mode: string | null;
+  version: string | null;
+};
+export type IHomePageAppResponse = {
+  sliderApps: IHomePageApp[];
+  popularApps: IHomePageApp[];
+  popularGames: IHomePageApp[];
+  latestUpdatedApps: IHomePageApp[];
+  latestUpdatedGames: IHomePageApp[];
+  newReleasedApps: IHomePageApp[];
+  newReleasedGames: IHomePageApp[];
+  categories: IGroupedCategory[];
+};
+export type IGroupedCategory = {
+  parent_id: string;
+  parent_name: string;
+  parent_slug: string;
+  categories: Category[];
 };
 
 // ====================== ENUM =============== //

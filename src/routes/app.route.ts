@@ -10,6 +10,7 @@ const appController = new AppController();
 
 router.get("/", authMiddleware(), appController.getAllApps);
 router.get("/sliders", appController.getAllSliderApps);
+router.get("/home-page-apps", appController.getAllHomePageApps);
 router.get("/searchable", appController.getAllSearchableApps);
 router.get("/slug/:slug", appController.getAppBySlug);
 router.get("/:id", authMiddleware(), appController.getAppById);

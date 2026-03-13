@@ -6,7 +6,7 @@ import { CategoryService } from "../services/category.service";
 import { paginationFields } from "../const/pagination.const";
 import pick from "../utils/pick";
 import { CategoryConstant } from "../const/category.const";
-import { IPaginationOptions } from "../types";
+import { IGroupedCategory, IPaginationOptions } from "../types";
 
 export class CategoryController {
   private categoryService = new CategoryService();
@@ -28,6 +28,18 @@ export class CategoryController {
       success: true,
     });
   });
+
+  public getGroupedCategories = catchAsync(
+    async (req: Request, res: Response) => {
+      const categories = await this.categoryService.getGroupedCategories();
+      sendResponse<IGroupedCategory[]>(res, {
+        message: "Categories fetched successfully",
+        statusCode: 200,
+        data: categories,
+        success: true,
+      });
+    },
+  );
 
   public getCategoryById = catchAsync(async (req: Request, res: Response) => {
     const category = await this.categoryService.getCategoryById(req.params.id);

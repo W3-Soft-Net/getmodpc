@@ -3,6 +3,7 @@ import { Category } from "../models/category.model";
 import {
   ICategoryFilters,
   IGenericResponse,
+  IGroupedCategory,
   IPaginationOptions,
 } from "../types";
 import ApiError from "../utils/ApiError";
@@ -10,6 +11,7 @@ import httpStatusCodes from "http-status-codes";
 import { calculatePagination } from "../utils/pagination";
 import { CategoryConstant } from "../const/category.const";
 import { generateUniqueSlug } from "../utils/generate-slug";
+import { IsNull } from "typeorm";
 export class CategoryService {
   private categoryRepository = AppDataSource.getRepository(Category);
 
@@ -17,7 +19,7 @@ export class CategoryService {
     filters: ICategoryFilters,
     paginationOptions: IPaginationOptions,
   ): Promise<IGenericResponse<Category[]>> {
-    const { searchTerm, parent_id, ...filtersData } = filters;
+    const { searchTerm, parent_cat_id, ...filtersData } = filters;
 
     const { page, limit, skip, sort_by, sort_order } =
       calculatePagination(paginationOptions);
@@ -36,12 +38,12 @@ export class CategoryService {
       });
     }
 
-    if (parent_id !== undefined) {
-      if (parent_id === null) {
+    if (parent_cat_id !== undefined) {
+      if (parent_cat_id === null) {
         query.andWhere("category.parent_cat_id IS NULL");
       } else {
-        query.andWhere("category.parent_cat_id = :parent_id", {
-          parent_id,
+        query.andWhere("category.parent_cat_id = :parent_cat_id", {
+          parent_cat_id,
         });
       }
     }
@@ -72,6 +74,39 @@ export class CategoryService {
         total,
       },
     };
+  }
+
+  async getGroupedCategories(): Promise<IGroupedCategory[]> {
+    const parents = await this.categoryRepository.find({
+      where: {
+        parent: IsNull(),
+      },
+      relations: ["children"],
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        children: {
+          id: true,
+          name: true,
+          slug: true,
+          category_icon: true,
+        },
+      },
+      order: {
+        name: "ASC",
+        children: {
+          name: "ASC",
+        },
+      },
+    });
+
+    return parents.map((parent) => ({
+      parent_id: parent.id,
+      parent_name: parent.name,
+      parent_slug: parent.slug,
+      categories: parent.children,
+    }));
   }
 
   async getCategoryById(id: string): Promise<Category | null> {

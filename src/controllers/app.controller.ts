@@ -3,7 +3,12 @@ import { AppService } from "../services/app.service";
 import { catchAsync } from "../utils/catchAsync";
 import pick from "../utils/pick";
 import { AppConstant } from "../const/app.const";
-import { IAppResponseDTO, IPaginationOptions } from "../types";
+import {
+  IAppResponseDTO,
+  IHomePageApp,
+  IHomePageAppResponse,
+  IPaginationOptions,
+} from "../types";
 import { paginationFields } from "../const/pagination.const";
 import sendResponse from "../utils/ApiResponse";
 import { App } from "../models/app.model";
@@ -32,13 +37,25 @@ export class AppController {
 
   public getAllSliderApps = catchAsync(async (req: Request, res: Response) => {
     const apps = await this.appService.getAllSliderApps();
-    sendResponse<App[]>(res, {
+    sendResponse<IHomePageApp[]>(res, {
       message: "Apps fetched successfully",
       statusCode: httpStatusCodes.OK,
       data: apps,
       success: true,
     });
   });
+
+  public getAllHomePageApps = catchAsync(
+    async (req: Request, res: Response) => {
+      const apps = await this.appService.getAllHomePageApps();
+      sendResponse<IHomePageAppResponse>(res, {
+        message: "Apps fetched successfully",
+        statusCode: httpStatusCodes.OK,
+        data: apps,
+        success: true,
+      });
+    },
+  );
 
   public getAppById = catchAsync(async (req: Request, res: Response) => {
     const app = await this.appService.getAppById(req.params.id);

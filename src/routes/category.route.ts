@@ -8,7 +8,7 @@ const router = Router();
 const categoryController = new CategoryController();
 
 router.get("/", authMiddleware(), categoryController.getAllCategories);
-
+router.get("/group-by-parent-cat", categoryController.getGroupedCategories);
 router.get("/:id", authMiddleware(), categoryController.getCategoryById);
 router.post(
   "/",

@@ -4,9 +4,12 @@ import { AppConstant } from "../const/app.const";
 import { App } from "../models/app.model";
 import {
   EnumAppStatus,
+  EnumAppType,
   IAppFilters,
   IAppResponseDTO,
   IGenericResponse,
+  IHomePageApp,
+  IHomePageAppResponse,
   IPaginationOptions,
 } from "../types";
 import { calculatePagination } from "../utils/pagination";
@@ -19,8 +22,8 @@ import { Tag } from "../models/tag.model";
 import { AppLink } from "../models/app_link.model";
 import { generateUniqueSlug } from "../utils/generate-slug";
 import { Rating } from "../models/rating.model";
-import { Setting } from "../models/setting.model";
 import { getSettingByKey } from "../utils/setting";
+import { CategoryService } from "./category.service";
 
 export class AppService {
   private readonly appRepository = AppDataSource.getRepository(App);
@@ -28,6 +31,7 @@ export class AppService {
   private readonly tagRepository = AppDataSource.getRepository(Tag);
   private readonly appLinkRepository = AppDataSource.getRepository(AppLink);
   private readonly ratingRepository = AppDataSource.getRepository(Rating);
+  private readonly categoryService = new CategoryService();
 
   async getAllApps(
     filters: IAppFilters,
@@ -94,12 +98,10 @@ export class AppService {
       });
     }
 
-    const total = await query.getCount();
-
     query.orderBy(`app.${sort_by}`, sort_order as "ASC" | "DESC");
     query.skip(skip).take(limit);
 
-    const data = await query.getMany();
+    const [data, total] = await query.getManyAndCount();
     return {
       meta: {
         total,
@@ -110,7 +112,7 @@ export class AppService {
     };
   }
 
-  async getAllSliderApps(): Promise<App[]> {
+  async getAllSliderApps(): Promise<IHomePageApp[]> {
     return await this.appRepository.find({
       where: {
         is_deleted: false,
@@ -129,8 +131,93 @@ export class AppService {
         "is_verified",
         "short_mode",
         "version",
+        "platform",
+        "type",
       ],
     });
+  }
+
+  async getAllHomePageApps(): Promise<IHomePageAppResponse> {
+    const select: any = [
+      "id",
+      "name",
+      "slug",
+      "icon",
+      "header_image",
+      "os_version",
+      "size",
+      "is_verified",
+      "short_mode",
+      "version",
+      "platform",
+      "type",
+    ];
+    const where = {
+      is_deleted: false,
+      deleted_at: IsNull(),
+      status: EnumAppStatus.PUBLISH,
+    };
+    const take = 8;
+    const [
+      sliderApps,
+      popularApps,
+      popularGames,
+      latestUpdatedApps,
+      latestUpdatedGames,
+      newReleasedApps,
+      newReleasedGames,
+      categories,
+    ] = await Promise.all([
+      this.getAllSliderApps(),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.APP },
+        select,
+        take,
+        order: { installs: "DESC" },
+      }),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.GAME },
+        select,
+        take,
+        order: { installs: "DESC" },
+      }),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.APP },
+        select,
+        take,
+        order: { updated_at: "DESC" },
+      }),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.GAME },
+        select,
+        take,
+        order: { updated_at: "DESC" },
+      }),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.APP },
+        select,
+        take,
+        order: { created_at: "DESC" },
+      }),
+      this.appRepository.find({
+        where: { ...where, type: EnumAppType.GAME },
+        select,
+        take,
+        order: { created_at: "DESC" },
+      }),
+      this.categoryService.getGroupedCategories(),
+    ]);
+
+    return {
+      sliderApps,
+      popularApps,
+      popularGames,
+      latestUpdatedApps,
+      latestUpdatedGames,
+      newReleasedApps,
+      newReleasedGames,
+      categories,
+    };
   }
 
   async getAppById(id: string): Promise<IAppResponseDTO> {
@@ -275,7 +362,9 @@ export class AppService {
       ...rest,
       status: status ?? app.status,
       published_date:
-        status === EnumAppStatus.PUBLISH ? new Date() : app.published_date,
+        status === EnumAppStatus.PUBLISH && !app.published_date
+          ? new Date()
+          : app.published_date,
     });
 
     if (categoryIds) {
@@ -327,6 +416,7 @@ export class AppService {
       .where("rating.ip = :ip", { ip })
       .andWhere("rating.appId = :appId", { appId })
       .orderBy("rating.rating_at", "DESC")
+      .take(1)
       .getOne();
 
     if (lastRating) {
