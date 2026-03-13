@@ -1,4 +1,5 @@
 import {
+  CopyObjectCommand,
   DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
@@ -12,7 +13,7 @@ import httpStatusCodes from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import fs from "fs";
 import { logger } from "../utils/logger";
-import { IMedia, IMediaAction } from "../types";
+import { IAllMediaResponse, IMedia, IMediaAction } from "../types";
 import path from "path";
 export class MediaService {
   private async getSignedMediaUrl(key: string, expiresIn = 900) {
@@ -23,24 +24,29 @@ export class MediaService {
     return await getSignedUrl(s3, command, { expiresIn });
   }
 
-  async getFolderContents(folderPrefix: string = ""): Promise<{
-    folders: string[];
-    files: IMedia[];
-  }> {
+  async getAllMedias(
+    folderPrefix: string = "",
+    limit: number,
+    continuationToken?: string,
+  ): Promise<IAllMediaResponse> {
     if (folderPrefix && !folderPrefix.endsWith("/")) folderPrefix += "/";
 
     const command = new ListObjectsV2Command({
       Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
       Prefix: folderPrefix,
       Delimiter: "/",
+      MaxKeys: limit,
+      ContinuationToken: continuationToken,
     });
 
     const response = await s3.send(command);
 
+    // folders
     const folders: string[] = (response.CommonPrefixes || []).map((p) =>
       p.Prefix!.replace(folderPrefix, ""),
     );
 
+    // files
     const files = await Promise.all(
       (response.Contents || [])
         .filter((obj) => obj.Key !== folderPrefix)
@@ -58,7 +64,12 @@ export class MediaService {
         }),
     );
 
-    return { folders, files };
+    return {
+      folders,
+      files,
+      nextToken: response.NextContinuationToken,
+      hasMore: response.IsTruncated ?? false,
+    };
   }
 
   async getMediaByKey(key: string): Promise<IMedia> {
@@ -88,6 +99,59 @@ export class MediaService {
       );
     }
     return folderName;
+  }
+
+  async renameFolder(
+    oldPrefix: string,
+    newPrefix: string,
+  ): Promise<{ moved: number }> {
+    if (!oldPrefix.endsWith("/")) oldPrefix += "/";
+    if (!newPrefix.endsWith("/")) newPrefix += "/";
+
+    let continuationToken: string | undefined;
+    let movedCount = 0;
+
+    do {
+      const listCommand = new ListObjectsV2Command({
+        Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+        Prefix: oldPrefix,
+        ContinuationToken: continuationToken,
+      });
+
+      const listResponse = await s3.send(listCommand);
+
+      const objects = listResponse.Contents || [];
+
+      for (const obj of objects) {
+        const oldKey = obj.Key!;
+        const newKey = oldKey.replace(oldPrefix, newPrefix);
+
+        await s3.send(
+          new CopyObjectCommand({
+            Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+            CopySource: `${process.env.IDRIVE_E2_BUCKET_NAME}/${oldKey}`,
+            Key: newKey,
+          }),
+        );
+
+        movedCount++;
+      }
+
+      if (objects.length > 0) {
+        await s3.send(
+          new DeleteObjectsCommand({
+            Bucket: process.env.IDRIVE_E2_BUCKET_NAME!,
+            Delete: {
+              Objects: objects.map((o) => ({ Key: o.Key! })),
+            },
+          }),
+        );
+      }
+
+      continuationToken = listResponse.NextContinuationToken;
+    } while (continuationToken);
+
+    return { moved: movedCount };
   }
 
   async uploadMediasToBucket(

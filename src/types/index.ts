@@ -179,6 +179,13 @@ export type IMedia = {
   created_at: Date | null;
   url: string;
 };
+
+export type IAllMediaResponse = {
+  folders: string[];
+  files: IMedia[];
+  nextToken?: string;
+  hasMore: boolean;
+};
 // ====================== ENUM =============== //
 export enum EnumPlatformType {
   ANDROID = "android",

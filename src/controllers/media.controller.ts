@@ -3,11 +3,8 @@ import { MediaService } from "../services/media.service";
 import { catchAsync } from "../utils/catchAsync";
 import sendResponse from "../utils/ApiResponse";
 import { Media } from "../models/media.model";
-import { paginationFields } from "../const/pagination.const";
-import { IPaginationOptions } from "../types";
-import pick from "../utils/pick";
+import { IAllMediaResponse, IMedia, IMediaAction } from "../types";
 import httpStatusCodes from "http-status-codes";
-import { uploadToS3 } from "../utils/idrive-client";
 import ApiError from "../utils/ApiError";
 import { AddMediaDTO } from "../dto/media.dto";
 import { logger } from "../utils/logger";
@@ -15,24 +12,26 @@ import { logger } from "../utils/logger";
 export class MediaController {
   private mediaService = new MediaService();
 
-  public getAllMedia = catchAsync(async (req: Request, res: Response) => {
-    const paginationOptions: IPaginationOptions = pick(
-      req.query,
-      paginationFields,
+  public getAllMedias = catchAsync(async (req: Request, res: Response) => {
+    const folder = req.query.folder as string;
+    const limit = Number(req.query.limit || 20);
+    const continuationToken = req.query.continuationToken as string;
+    const medias = await this.mediaService.getAllMedias(
+      folder,
+      limit,
+      continuationToken,
     );
-    const medias = await this.mediaService.getAllMedia(paginationOptions);
-    sendResponse<Media[]>(res, {
+    sendResponse<IAllMediaResponse>(res, {
       message: "Media fetched successfully",
       statusCode: httpStatusCodes.OK,
-      data: medias.data,
-      meta: medias.meta,
+      data: medias,
       success: true,
     });
   });
 
-  public getMediaById = catchAsync(async (req: Request, res: Response) => {
-    const media = await this.mediaService.getMediaById(req.params.id);
-    sendResponse<Media>(res, {
+  public getMediaByKey = catchAsync(async (req: Request, res: Response) => {
+    const media = await this.mediaService.getMediaByKey(req.params.key);
+    sendResponse<IMedia>(res, {
       message: "Media fetched successfully",
       statusCode: httpStatusCodes.OK,
       data: media,
@@ -40,67 +39,61 @@ export class MediaController {
     });
   });
 
-  public addMultipleMedia = catchAsync(async (req: Request, res: Response) => {
-    const files = req.files as Express.Multer.File[];
-
-    if (!files || files.length === 0) {
-      throw new ApiError(httpStatusCodes.BAD_REQUEST, "No files uploaded");
-    }
-
-    const uploadMedia: AddMediaDTO[] = [];
-
-    // Upload all files concurrently
-    const uploadedResults = await Promise.all(
-      files.map(async (file) => {
-        try {
-          const url = await uploadToS3(file);
-          if (!url) return null;
-
-          return {
-            file_name: file.originalname,
-            url,
-            file_type: file.mimetype,
-            file_size: file.size,
-            alt_text: req.body.alt_text || null,
-          } as AddMediaDTO;
-        } catch (error) {
-          logger.error(`Failed to upload ${file.originalname}:`, error);
-          return null;
-        }
-      }),
-    );
-
-    // Filter out any failed uploads
-    for (const media of uploadedResults) {
-      if (media) uploadMedia.push(media);
-    }
-
-    if (uploadMedia.length === 0) {
-      throw new ApiError(
-        httpStatusCodes.INTERNAL_SERVER_ERROR,
-        "Failed to upload all files",
-      );
-    }
-
-    // Save to DB
-    const medias = await this.mediaService.addMultipleMedia(uploadMedia);
-
-    sendResponse<Media[]>(res, {
-      message: "Media added successfully",
+  public createFolder = catchAsync(async (req: Request, res: Response) => {
+    const folderName = req.body.folderName;
+    const folder = await this.mediaService.createFolder(folderName);
+    sendResponse<string>(res, {
+      message: "Folder created successfully",
       statusCode: httpStatusCodes.OK,
-      data: medias,
+      data: folder,
       success: true,
     });
   });
 
-  public deleteMultipleMedia = catchAsync(
+  public renameFolder = catchAsync(async (req: Request, res: Response) => {
+    const { oldFolder, newFolder } = req.body;
+    const folder = await this.mediaService.renameFolder(oldFolder, newFolder);
+    sendResponse<{ moved: number }>(res, {
+      message: "Folder renamed successfully",
+      statusCode: httpStatusCodes.OK,
+      data: folder,
+      success: true,
+    });
+  });
+
+  public uploadMediasToBucket = catchAsync(
     async (req: Request, res: Response) => {
-      await this.mediaService.deleteMultipleMedia(req.body.urls);
-      sendResponse(res, {
-        message: "Media deleted successfully",
+      const files = req.files as Express.Multer.File[];
+      const folder = req.body.folder;
+      const media = await this.mediaService.uploadMediasToBucket(files, folder);
+      sendResponse<IMediaAction>(res, {
+        message: "Media uploaded successfully",
         statusCode: httpStatusCodes.OK,
+        data: media,
         success: true,
       });
     },
   );
+
+  public deletedMedias = catchAsync(async (req: Request, res: Response) => {
+    const fileKeys = req.body.fileKeys;
+    const media = await this.mediaService.deletedMedias(fileKeys);
+    sendResponse<IMediaAction>(res, {
+      message: "Media deleted successfully",
+      statusCode: httpStatusCodes.OK,
+      data: media,
+      success: true,
+    });
+  });
+
+  public deleteFolder = catchAsync(async (req: Request, res: Response) => {
+    const folderPrefix = req.body.folderName;
+    const media = await this.mediaService.deleteFolder(folderPrefix);
+    sendResponse<IMediaAction>(res, {
+      message: "Folder deleted successfully",
+      statusCode: httpStatusCodes.OK,
+      data: media,
+      success: true,
+    });
+  });
 }
