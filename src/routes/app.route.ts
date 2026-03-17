@@ -13,6 +13,8 @@ router.get("/sliders", appController.getAllSliderApps);
 router.get("/home-page-apps", appController.getAllHomePageApps);
 router.get("/searchable", appController.getAllSearchableApps);
 router.get("/slug/:slug", appController.getAppBySlug);
+router.get("/download/:slug", appController.getDownloadPageAppBySlug);
+
 router.get("/:id", authMiddleware(), appController.getAppById);
 router.post(
   "/",

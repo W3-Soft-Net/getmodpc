@@ -1,6 +1,7 @@
 import { App } from "../models/app.model";
 import { AppLink } from "../models/app_link.model";
 import { Category } from "../models/category.model";
+import { FAQs } from "../models/faq.model";
 
 export type IGenericErrorMessage = {
   path: string;
@@ -140,6 +141,14 @@ export type IAppResponseDTO = Omit<App, "links"> & {
   };
 };
 
+export type IAppDownloadPageResponseDTO = Omit<App, "links"> & {
+  links: Array<Omit<AppLink, "app">>;
+  related?: {
+    byCategory: IHomePageApp[];
+    downloadFaqs: FAQs[];
+  };
+};
+
 export type IHomePageApp = {
   icon: string | null;
   header_image: string | null;
@@ -153,6 +162,7 @@ export type IHomePageApp = {
   os_version: string | null;
   short_mode: string | null;
   version: string | null;
+  updated_at: Date | string;
 };
 export type IHomePageAppResponse = {
   sliderApps: IHomePageApp[];

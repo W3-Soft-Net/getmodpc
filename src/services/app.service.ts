@@ -5,6 +5,8 @@ import { App } from "../models/app.model";
 import {
   EnumAppStatus,
   EnumAppType,
+  EnumPlatformType,
+  IAppDownloadPageResponseDTO,
   IAppFilters,
   IAppResponseDTO,
   IGenericResponse,
@@ -24,6 +26,7 @@ import { generateUniqueSlug } from "../utils/generate-slug";
 import { Rating } from "../models/rating.model";
 import { getSettingByKey } from "../utils/caches";
 import { CategoryService } from "./category.service";
+import { FaqService } from "./faq.service";
 
 export class AppService {
   private readonly appRepository = AppDataSource.getRepository(App);
@@ -32,6 +35,47 @@ export class AppService {
   private readonly appLinkRepository = AppDataSource.getRepository(AppLink);
   private readonly ratingRepository = AppDataSource.getRepository(Rating);
   private readonly categoryService = new CategoryService();
+  private readonly faqService = new FaqService();
+
+  private readonly select: any = [
+    "app.id",
+    "app.name",
+    "app.slug",
+    "app.icon",
+    "app.header_image",
+    "app.os_version",
+    "app.size",
+    "app.is_verified",
+    "app.short_mode",
+    "app.version",
+    "app.platform",
+    "app.type",
+    "app.updated_at",
+  ];
+
+  private readonly baseWhere = `
+    app.is_deleted = false
+    AND app.deleted_at IS NULL
+    AND app.status = :status
+  `;
+
+  private async getAppsByType(
+    type: EnumAppType,
+    orderBy: keyof App,
+    take = 8,
+  ): Promise<IHomePageApp[]> {
+    return this.appRepository.find({
+      where: {
+        is_deleted: false,
+        deleted_at: IsNull(),
+        status: EnumAppStatus.PUBLISH,
+        type,
+      },
+      select: this.select.map((s) => s.split(".")[1]),
+      take,
+      order: { [orderBy]: "DESC" },
+    });
+  }
 
   async getAllApps(
     filters: IAppFilters,
@@ -113,51 +157,16 @@ export class AppService {
   }
 
   async getAllSliderApps(): Promise<IHomePageApp[]> {
-    return await this.appRepository.find({
-      where: {
-        is_deleted: false,
-        deleted_at: IsNull(),
-        show_in_slider: true,
-        status: EnumAppStatus.PUBLISH,
-      },
-      select: [
-        "id",
-        "name",
-        "slug",
-        "icon",
-        "header_image",
-        "os_version",
-        "size",
-        "is_verified",
-        "short_mode",
-        "version",
-        "platform",
-        "type",
-      ],
-    });
+    return await this.appRepository
+      .createQueryBuilder("app")
+      .where(this.baseWhere, { status: EnumAppStatus.PUBLISH })
+      .andWhere("app.show_in_slider = true")
+      .select(this.select)
+      .orderBy("app.updated_at", "DESC")
+      .getMany();
   }
 
   async getAllHomePageApps(): Promise<IHomePageAppResponse> {
-    const select: any = [
-      "id",
-      "name",
-      "slug",
-      "icon",
-      "header_image",
-      "os_version",
-      "size",
-      "is_verified",
-      "short_mode",
-      "version",
-      "platform",
-      "type",
-    ];
-    const where = {
-      is_deleted: false,
-      deleted_at: IsNull(),
-      status: EnumAppStatus.PUBLISH,
-    };
-    const take = 8;
     const [
       sliderApps,
       popularApps,
@@ -169,42 +178,12 @@ export class AppService {
       categories,
     ] = await Promise.all([
       this.getAllSliderApps(),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.APP },
-        select,
-        take,
-        order: { installs: "DESC" },
-      }),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.GAME },
-        select,
-        take,
-        order: { installs: "DESC" },
-      }),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.APP },
-        select,
-        take,
-        order: { updated_at: "DESC" },
-      }),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.GAME },
-        select,
-        take,
-        order: { updated_at: "DESC" },
-      }),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.APP },
-        select,
-        take,
-        order: { created_at: "DESC" },
-      }),
-      this.appRepository.find({
-        where: { ...where, type: EnumAppType.GAME },
-        select,
-        take,
-        order: { created_at: "DESC" },
-      }),
+      this.getAppsByType(EnumAppType.APP, "installs"),
+      this.getAppsByType(EnumAppType.GAME, "installs"),
+      this.getAppsByType(EnumAppType.APP, "updated_at"),
+      this.getAppsByType(EnumAppType.GAME, "updated_at"),
+      this.getAppsByType(EnumAppType.APP, "created_at"),
+      this.getAppsByType(EnumAppType.GAME, "created_at"),
       this.categoryService.getGroupedCategories(),
     ]);
 
@@ -241,31 +220,6 @@ export class AppService {
   }
 
   async getAppBySlug(slug: string): Promise<IAppResponseDTO> {
-    const select = [
-      "app.id",
-      "app.name",
-      "app.slug",
-      "app.icon",
-      "app.header_image",
-      "app.os_version",
-      "app.size",
-      "app.is_verified",
-      "app.short_mode",
-      "app.version",
-      "app.platform",
-      "app.type",
-      "app.updated_at",
-    ];
-
-    const baseWhere = `
-    app.is_deleted = false
-    AND app.deleted_at IS NULL
-    AND app.status = :status
-  `;
-
-    // -------------------------------
-    // MAIN APP
-    // -------------------------------
     const app = await this.appRepository
       .createQueryBuilder("app")
       .leftJoin("app.categories", "category")
@@ -282,7 +236,7 @@ export class AppService {
         "link.note",
       ])
       .where("app.slug = :slug", { slug })
-      .andWhere(baseWhere, { status: EnumAppStatus.PUBLISH })
+      .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
       .getOne();
 
     if (!app) {
@@ -302,8 +256,8 @@ export class AppService {
           .leftJoin("app.categories", "category")
           .where("category.id IN (:...categoryIds)", { categoryIds })
           .andWhere("app.id != :appId", { appId: app.id })
-          .andWhere(baseWhere, { status: EnumAppStatus.PUBLISH })
-          .select(select)
+          .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
+          .select(this.select)
           .distinct(true)
           .orderBy("app.updated_at", "DESC")
           .take(20)
@@ -319,8 +273,8 @@ export class AppService {
           .leftJoin("app.tags", "tag")
           .where("tag.id IN (:...tagIds)", { tagIds })
           .andWhere("app.id != :appId", { appId: app.id })
-          .andWhere(baseWhere, { status: EnumAppStatus.PUBLISH })
-          .select(select)
+          .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
+          .select(this.select)
           .distinct(true)
           .orderBy("app.updated_at", "DESC")
           .take(20)
@@ -334,22 +288,17 @@ export class AppService {
       ? await this.appRepository
           .createQueryBuilder("app")
           .where("app.id != :appId", { appId: app.id })
-          .andWhere(baseWhere, { status: EnumAppStatus.PUBLISH })
-
-          // 🔥 array overlap (Postgres)
+          .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
           .andWhere("app.app_developers && ARRAY[:...developers]", {
             developers,
           })
 
-          .select(select)
+          .select(this.select)
           .orderBy("app.updated_at", "DESC")
           .take(20)
           .getMany()
       : [];
 
-    // -------------------------------
-    // REMOVE DUPLICATES BETWEEN LISTS
-    // -------------------------------
     const usedIds = new Set([
       ...categoryApps.map((a) => a.id),
       ...similarApps.map((a) => a.id),
@@ -359,9 +308,6 @@ export class AppService {
       (a) => !usedIds.has(a.id),
     );
 
-    // -------------------------------
-    // CLEAN LINKS
-    // -------------------------------
     const response = {
       ...app,
       links: app.links?.map(({ app, ...rest }) => rest),
@@ -374,6 +320,77 @@ export class AppService {
     };
 
     return response;
+  }
+
+  async getDownloadPageAppBySlug(
+    slug: string,
+  ): Promise<IAppDownloadPageResponseDTO> {
+    const app = await this.appRepository
+      .createQueryBuilder("app")
+      .leftJoin("app.categories", "category")
+      .addSelect(["category.id", "category.name", "category.slug"])
+      .leftJoin("app.links", "link")
+      .addSelect([
+        "link.id",
+        "link.name",
+        "link.type",
+        "link.size",
+        "link.link",
+        "link.note",
+      ])
+      .where("app.slug = :slug", { slug })
+      .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
+      .select([
+        "app.id",
+        "app.name",
+        "app.slug",
+        "app.is_verified",
+        "app.icon",
+        "app.created_at",
+        "app.updated_at",
+        "app.platform",
+        "app.modders",
+        "link.id",
+        "link.name",
+        "link.type",
+        "link.size",
+        "link.link",
+        "link.note",
+      ])
+      .getOne();
+
+    if (!app) {
+      throw new ApiError(httpStatusCodes.NOT_FOUND, "App not found");
+    }
+    const categoryIds = app.categories?.map((c) => c.id) || [];
+
+    const categoryApps = categoryIds.length
+      ? await this.appRepository
+          .createQueryBuilder("app")
+          .leftJoin("app.categories", "category")
+          .where("category.id IN (:...categoryIds)", { categoryIds })
+          .andWhere("app.id != :appId", { appId: app.id })
+          .andWhere(this.baseWhere, { status: EnumAppStatus.PUBLISH })
+          .select(this.select)
+          .distinct(true)
+          .orderBy("app.updated_at", "DESC")
+          .take(20)
+          .getMany()
+      : [];
+
+    const faqs = app.platform
+      ? await this.faqService.getFaqByType(app.platform as EnumPlatformType)
+      : [];
+
+    return {
+      ...app,
+      links: app.links?.map(({ app, ...rest }) => rest),
+
+      related: {
+        byCategory: categoryApps,
+        downloadFaqs: faqs,
+      },
+    };
   }
   async getAllSearchableApps(search: string): Promise<App[]> {
     const searchText = search.trim()?.toLocaleLowerCase();

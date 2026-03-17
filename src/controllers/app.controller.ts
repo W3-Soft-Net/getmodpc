@@ -4,6 +4,7 @@ import { catchAsync } from "../utils/catchAsync";
 import pick from "../utils/pick";
 import { AppConstant } from "../const/app.const";
 import {
+  IAppDownloadPageResponseDTO,
   IAppResponseDTO,
   IHomePageApp,
   IHomePageAppResponse,
@@ -76,6 +77,20 @@ export class AppController {
       success: true,
     });
   });
+
+  public getDownloadPageAppBySlug = catchAsync(
+    async (req: Request, res: Response) => {
+      const app = await this.appService.getDownloadPageAppBySlug(
+        req.params.slug,
+      );
+      sendResponse<IAppDownloadPageResponseDTO>(res, {
+        message: "App fetched successfully",
+        statusCode: httpStatusCodes.OK,
+        data: app,
+        success: true,
+      });
+    },
+  );
 
   public getAllSearchableApps = catchAsync(
     async (req: Request, res: Response) => {
