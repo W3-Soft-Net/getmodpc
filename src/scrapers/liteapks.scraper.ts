@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
 
-async function scrapeLiteApkApp(url: string) {
+export async function scrapeLiteApkApp(url: string) {
   const { data } = await axios.get(url, {
     headers: {
       "User-Agent":
@@ -11,18 +11,23 @@ async function scrapeLiteApkApp(url: string) {
 
   const $ = cheerio.load(data);
 
-  const title = $("h1").first().text().trim();
+  const title = ($("h1").first().text().trim() || "").split("v")[0].trim();
 
   const descriptionHtml = $(".entry-content").html() || null;
 
   const description = $(".entry-content").text().trim();
 
-  const icon = $(".site-content img").first().attr("src") || null;
+  const icon = $(".app-info-icon img").attr("src") || null;
 
-  let version: string | null = null;
-  let size: string | null = null;
-  let developer: string | null = null;
-  let modFeatures: string | null = null;
+  const shortModeRaw = $(".app-info-section .sub-info p").text().trim();
+
+  const shortMode = shortModeRaw.includes(":")
+    ? shortModeRaw.split(":")[1].trim()
+    : shortModeRaw || null;
+
+  let summary: string = "";
+
+  const recentChanges = $(".short-desc p em").text().trim() || "";
 
   const texts: string[] = [];
 
@@ -31,64 +36,100 @@ async function scrapeLiteApkApp(url: string) {
     if (t) texts.push(t);
   });
 
+  let version: string | null = null;
+  let size: string | null = null;
+  let scoreText: string | null = null;
+  let ratings: number = 0;
+
+  $(".app-stats .app-stat").each((_, el) => {
+    const label = $(el).find(".label").text().trim().toLowerCase();
+    const value = $(el).find(".value").text().trim();
+
+    if (!value) return;
+
+    if (/version/.test(label)) {
+      version = value;
+    } else if (/size/.test(label)) {
+      size = value;
+    } else if (/ratings|score/.test(label)) {
+      scoreText = value;
+      ratings = +(label.split(" ")[0] || 0);
+    }
+  });
+
+  let genre: string | null = null;
+  let genreId: string | null = null;
+  let installs: string | null = null;
+  let categories: Array<{
+    name: string;
+    id: string;
+  }> = [];
+  let updated_text: string | null = null;
+  const headerImage = $(".single-hero .hero-bg img").attr("src") || null;
+
+  $(".app-info-bar .info-bar-scroll .info-bar-item").each((_, el) => {
+    const label = $(el).find(".info-bar-label").text().trim().toLowerCase();
+    const value = $(el).find(".info-bar-value").text().trim();
+    const sub = $(el).find(".info-bar-sub").text().trim();
+    const subLinkText = $(el).find(".info-bar-sub a").text().trim();
+    if (!value && !subLinkText && !sub) return;
+    if (/genre|category/.test(label)) {
+      genre = subLinkText;
+      genreId = subLinkText.toLocaleUpperCase();
+      categories.push({
+        name: subLinkText,
+        id: subLinkText.toLocaleUpperCase(),
+      });
+    } else if (/reached/.test(label)) {
+      installs = value;
+    } else if (/updated/.test(label)) {
+      updated_text = `${value}, ${sub}`;
+    }
+  });
+
+  const developer =
+    $('a.developer, a[href*="developer"], a[rel="tag"]')
+      .first()
+      .text()
+      .trim() || null;
+  const reviews = +(
+    ($(".rating-overview .count").text().trim() || "").split(" ")[0] ?? 0
+  );
+
   texts.forEach((t) => {
-    if (!version && /^\d+\.\d+/.test(t)) {
-      version = t;
-    }
-
-    if (!size && /\d+\s?(MB|GB|M)/i.test(t)) {
-      size = t;
-    }
-
-    if (!modFeatures && /unlocked|premium|mod/i.test(t)) {
-      modFeatures = t;
-    }
-
-    if (!developer && /spotify|inc|ltd|studio/i.test(t)) {
-      developer = t;
+    if (!summary && /unlocked|premium|mod/i.test(t)) {
+      summary = t;
     }
   });
 
   const screenshots: string[] = [];
-
-  $('a[data-fancybox="gallery"]').each((_, el) => {
-    const src =
-      $(el).attr("href") ||
-      $(el).find("img").attr("src") ||
-      $(el).find("img").attr("data-src");
-
+  $("#screenshotScroll img").each((_, el) => {
+    const src = $(el).attr("src");
     if (src) screenshots.push(src);
   });
 
-  const downloadPage = $("a:contains('Download')").attr("href") || null;
-
   return {
-    source: "liteapks",
-    url,
-
     title,
     icon,
-
+    headerImage,
     developer,
     version,
     size,
-
-    modFeatures,
-
+    ratings: +ratings,
+    recentChanges,
+    summary,
+    shortMode,
     description,
     descriptionHtml,
-
     screenshots,
-
-    downloadPage,
-
-    score: null,
-    installs: null,
-    ratings: null,
-    reviews: null,
+    scoreText,
+    installs,
+    genre,
+    genreId,
+    categories,
+    reviews,
+    url,
+    updated_text,
+    source: "liteapks",
   };
 }
-
-export const LiteApkScraper = {
-  scrapeLiteApkApp,
-};

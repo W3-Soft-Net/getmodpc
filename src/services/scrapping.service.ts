@@ -4,6 +4,7 @@ import {
   EnumLiteApkType,
   ICheckAppVersionResponse,
   IGenericResponse,
+  ILiteApksAppsAndGames,
   IPaginationOptions,
 } from "../types";
 import ApiError from "../utils/ApiError";
@@ -11,6 +12,7 @@ import httpStatusCodes from "http-status-codes";
 import * as cheerio from "cheerio";
 import { calculatePagination } from "../utils/pagination";
 import { format } from "date-fns";
+import { scrapeLiteApkApp } from "../scrapers/liteapks.scraper";
 
 export class ScrappingService {
   async getPlayStoreAppByUrl(playStoreUrl: string): Promise<any> {
@@ -96,33 +98,42 @@ export class ScrappingService {
   }
 
   //=========================== LiteApks APPS =========================//
-  async getLiteApkAppByUrl(url: string): Promise<any> {}
+  async getLiteApkAppByUrl(url: string): Promise<any> {
+    return await scrapeLiteApkApp(url);
+  }
 
-  async getAllLiteApkLatestAppsAndGames(type: EnumLiteApkType): Promise<any[]> {
-    const baseUrl = "https://liteapks.com/";
+  async getAllLiteApkLatestAppsAndGames(
+    type: EnumLiteApkType,
+    page = 1,
+  ): Promise<ILiteApksAppsAndGames[]> {
+    const baseUrl = `https://liteapks.com/${type}/page/${page}`;
 
-    const { data } = await axios.get(`${baseUrl}${type}`, {
+    const { data } = await axios.get(baseUrl, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/122 Safari/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
     });
 
     const $ = cheerio.load(data);
-    const apps: any[] = [];
-    $(".post").each((_, el) => {
-      const title = $(el).find("h3, h2, h4").first().text().trim();
+    const apps: ILiteApksAppsAndGames[] = [];
 
-      const link = $(el).find("a").first().attr("href");
-
-      const image =
-        $(el).find("img").attr("data-src") || $(el).find("img").attr("src");
+    $("#games-container #games-grid article").each((_, element) => {
+      const el = $(element);
+      const title = el.find(".game-info h3").text().trim();
+      const ratingsRaw = el.find(".text-star").text().trim();
+      const scoreText = ratingsRaw.split(" ")[1];
+      const shortMode = el.find(".text-gray").text().trim();
+      const link = $(element).find("> a").attr("href") || "";
+      let icon = el.find(".game-thumb img").attr("src") || "";
 
       if (title && link) {
         apps.push({
           title,
           link,
-          image,
+          icon,
+          scoreText,
+          shortMode,
         });
       }
     });

@@ -201,6 +201,14 @@ export type IAllMediaResponse = {
   nextToken?: string;
   hasMore: boolean;
 };
+
+export type ILiteApksAppsAndGames = {
+  title: string;
+  icon: string;
+  link: string;
+  scoreText: string;
+  shortMode: string;
+};
 // ====================== ENUM =============== //
 export enum EnumPlatformType {
   ANDROID = "android",

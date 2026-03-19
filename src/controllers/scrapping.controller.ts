@@ -6,6 +6,7 @@ import httpStatusCodes from "http-status-codes";
 import {
   EnumLiteApkType,
   ICheckAppVersionResponse,
+  ILiteApksAppsAndGames,
   IPaginationOptions,
 } from "../types";
 import pick from "../utils/pick";
@@ -62,12 +63,25 @@ export class ScrappingController {
   });
 
   //================================== Liteapks APP =================== //
+  public getLiteApkAppByUrl = catchAsync(
+    async (req: Request, res: Response) => {
+      const app = await this.scrappingService.getLiteApkAppByUrl(req.body.url);
+      sendResponse(res, {
+        message: "Liteapks Apps fetched successfully",
+        statusCode: httpStatusCodes.OK,
+        data: app,
+        success: true,
+      });
+    },
+  );
+
   public getAllLiteApkLatestAppsAndGames = catchAsync(
     async (req: Request, res: Response) => {
       const apps = await this.scrappingService.getAllLiteApkLatestAppsAndGames(
         req.query.type as EnumLiteApkType,
+        +((req.query.page as string) || 1) as number,
       );
-      sendResponse(res, {
+      sendResponse<ILiteApksAppsAndGames[]>(res, {
         message: "Liteapks Apps fetched successfully",
         statusCode: httpStatusCodes.OK,
         data: apps,

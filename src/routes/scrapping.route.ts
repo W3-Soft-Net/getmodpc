@@ -27,6 +27,11 @@ router.post(
 );
 
 //============================= Liteapks App=====================//
+router.post(
+  "/liteapks-app-by-url",
+  validateRequest(AppValidation.getAppScrapingSchema),
+  scrappingController.getLiteApkAppByUrl,
+);
 router.get(
   "/liteapks-app-by-type",
   authMiddleware(),
