@@ -55,8 +55,8 @@ export class FaqService {
     };
   }
 
-  async getFaqByType(type: EnumPlatformType): Promise<FAQs[]> {
-    const faqs = await this.faqRepository.findBy({ type });
+  async getFaqByPlatform(platform: EnumPlatformType): Promise<FAQs[]> {
+    const faqs = await this.faqRepository.findBy({ platform });
     return faqs;
   }
 

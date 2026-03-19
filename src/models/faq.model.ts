@@ -9,7 +9,7 @@ import {
 import { EnumPlatformType } from "../types";
 
 @Entity("faqs")
-@Index(["title", "type"])
+@Index(["title", "platform"])
 export class FAQs {
   @PrimaryGeneratedColumn("uuid")
   id: string;
@@ -24,8 +24,9 @@ export class FAQs {
     default: EnumPlatformType.ANDROID,
     type: "enum",
     enum: EnumPlatformType,
+    unique: true,
   })
-  type: EnumPlatformType;
+  platform: EnumPlatformType;
 
   @CreateDateColumn()
   created_at: Date;

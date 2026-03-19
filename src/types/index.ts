@@ -84,7 +84,7 @@ export type IFAQsFilters = {
   searchTerm?: string;
   title?: string;
   content?: string;
-  type?: EnumPlatformType;
+  platform?: EnumPlatformType;
 };
 
 export type IUserAppRequestFilters = {

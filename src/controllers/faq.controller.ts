@@ -28,9 +28,9 @@ export class FaqController {
     });
   });
 
-  public getFaqByType = catchAsync(async (req: Request, res: Response) => {
-    const faqs = await this.faqService.getFaqByType(
-      req.params.type as EnumPlatformType,
+  public getFaqByPlatform = catchAsync(async (req: Request, res: Response) => {
+    const faqs = await this.faqService.getFaqByPlatform(
+      req.params.platform as EnumPlatformType,
     );
     sendResponse<FAQs[]>(res, {
       message: "FAQs fetched successfully",

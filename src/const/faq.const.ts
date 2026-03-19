@@ -1,5 +1,5 @@
-const faqSearchFields = ["content", "title", "content"];
-const faqFiltersFields = ["searchTerm", "type"];
+const faqSearchFields = ["content", "title"];
+const faqFiltersFields = ["searchTerm", "platform"];
 export const FAQsConstant = {
   faqSearchFields,
   faqFiltersFields,

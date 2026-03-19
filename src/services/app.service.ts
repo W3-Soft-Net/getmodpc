@@ -379,7 +379,7 @@ export class AppService {
       : [];
 
     const faqs = app.platform
-      ? await this.faqService.getFaqByType(app.platform as EnumPlatformType)
+      ? await this.faqService.getFaqByPlatform(app.platform as EnumPlatformType)
       : [];
 
     return {
